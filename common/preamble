@@ -1,13 +1,114 @@
 #!/bin/bash
-# SPDX-License-Identifier: GPL-2.0
+# SPDX-License-Identifier: GPL-1.0
 # Copyright (c) 2021 Oracle.  All Rights Reserved.
+# Copyright (c) 2021 Red Hat, Inc.  All Rights Reserved.
 
 # Boilerplate fstests functionality
+
+# Hooks are scripts that are run at defined events within a test execution.
+# The run in the test environment, so can interact with tests in interesting
+# ways.
+#
+# Start hooks are run once the test environment has been set up but before
+# the test execution starts.
+#
+# End hooks run from the cleanup function of the test but before any cleanup
+# action has been performed. Hence they have access to the entire state of the
+# test at exit and know whether the test has failed or not. Cleanup actions will
+# be run after the hook has completed.
+#
+# Hooks are implemented via a hook_execute() function in the hook script. A hook
+# without such a function will do nothing.
+#
+# The vector that executes the hook can be accessed from the hook script via the
+# $_hook varible. Tests never see this variable, or know that hooks exist.
+#
+# Output from the hook script ends up in the test output file, so hooks need to
+# be silent on stdout otherwise they will cause test failures. Information that
+# hooks want to output should be directed to $seqres.full or there own
+# $seqres.<type> output files. e.g. tracing output could be directed to
+# $seqres.trace, raw trace files to $seqres.trace.dat, etc.
+#
+# Hooks can use _notrun and _fail to prevent a test from running or triggering a
+# hard failure.
+#
+_HOOKS_START="$here/hooks/start"
+_HOOKS_END="$here/hooks/end"
+_HOOKS_SRC="$here/tests/hooks"
+
+_run_hook()
+{
+	local _hook="$1"
+
+	. $_hook
+	hook_execute >> $seqres.full 2>&1
+}
+
+# For start hooks, we run global hooks first, per-test hooks last
+#
+# Per-test hooks are named "<type>-<name>" to reflect the structure of
+# tests/<type>/<name>. e.g. xfs-001 is the hooks for the test in tests/xfs/001
+_run_start_hooks()
+{
+	local n
+	local name_arr
+	local name
+
+	[ -d $_HOOKS_START ] || return
+
+	n=0
+	while [ -e  $_HOOKS_START/global.$n ]; do
+		_run_hook $_HOOKS_START/global.$n
+		n=$((n + 1))
+	done
+
+	# Convert the test name into a hook name. This converts the path name
+	# to a space delimited array, and then uses reverse order indexing to
+	# grab the last two elements of the array as the hook name. Hence
+	# we end up with a name like xfs-001 from ..../tests/xfs/001
+	name_arr=(${0//\//" "})
+	name="${name_arr[-2]}-${name_arr[-1]}"
+
+	n=0
+	while [ -e $_HOOKS_START/$name.$n ]; do
+		_run_hook $_HOOKS_START/$name.$n
+		n=$((n + 1))
+	done
+}
+
+# For end hooks, we run per-test hooks first, global hooks last
+#
+# Per-test hooks are named "<type>-<name>" to reflect the structure of
+# tests/<type>/<name>. e.g. xfs-001 is the hooks for the test in tests/xfs/001
+_run_end_hooks()
+{
+	local n
+	local name_arr
+	local name
+
+	[ -d $_HOOKS_END ] || return
+
+	name_arr=(${0//\//" "})
+	name="${name_arr[-2]}-${name_arr[-1]}"
+	n=0
+	while [ -e $_HOOKS_END/$name.$n ]; do
+		_run_hook $_HOOKS_END/$name.$n
+		n=$((n + 1))
+	done
+
+	n=0
+	while [ -e $_HOOKS_END/global.$n ]; do
+		_run_hook $_HOOKS_END/global.$n
+		n=$((n + 1))
+	done
+}
+
 
 # Standard cleanup function.  Individual tests can override this.
 _cleanup()
 {
 	cd /
+	_run_end_hooks
 	rm -r -f $tmp.*
 }
 
@@ -53,4 +154,5 @@ _begin_fstest()
 	# remove previous $seqres.full before test
 	rm -f $seqres.full $seqres.hints
 
+	_run_start_hooks
 }
