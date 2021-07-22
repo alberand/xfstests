@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (c) 2021 Red Hat, Inc.  All Rights Reserved.
+#
+# Basic trace-cmd stop hook to extract traces only on test failure. This will
+# not generate a trace if a golden image match fails, only if the test exits
+# with a non-zero failure code.
+#
+# This will extract the current traces to $seqres.trace.dat, then stop the
+# tracer. It will run a report on the trace data and drop it in $seqres/trace
+hook_execute()
+{
+	echo Running hook $_hook
+	if [ $status -ne 0 ]; then
+		trace-cmd extract -o $seqres.trace.dat
+		trace-cmd report -i $seqres.trace.dat > $seqres.trace
+	fi
+	trace-cmd reset
+}

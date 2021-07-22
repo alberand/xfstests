@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (c) 2021 Red Hat, Inc.  All Rights Reserved.
+#
+# Basic trace-cmd stop hook
+#
+# This will extract the current traces to $seqres.trace.dat, then stop the
+# tracer. It will run a report on the trace data and drop it in $seqres/trace
+hook_execute()
+{
+	echo Running hook $_hook
+	trace-cmd extract -o $seqres.trace.dat
+	trace-cmd reset
+	trace-cmd report -i $seqres.trace.dat > $seqres.trace
+}

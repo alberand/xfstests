@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (c) 2021 Red Hat, Inc.  All Rights Reserved.
+#
+# trace-cmd start hook for tracing all XFS
+#
+# This is a memory hog - it reserves 250MB of RAM per CPU for the ring buffer.
+hook_execute()
+{
+	echo Running hook $_hook
+	trace-cmd start -b 250000 -e xfs\* -e xlog\*
+}
