@@ -16,28 +16,30 @@ _begin_fstest auto metadata replay thin recoveryloop
 # If debugging logwrites failures using the tools/dm-logwrite-replay script,
 # switch the cleanup function to the version that is commented out below so that
 # failure leaves the corpse intact for post-mortem failure analysis.
-_cleanup()
-{
-	cd /
-	$KILLALL_PROG -KILL -q $FSSTRESS_PROG &> /dev/null
-	_log_writes_cleanup &> /dev/null
-	_dmthin_cleanup
-	rm -f $tmp.*
-}
-
-# tools/dm-logwrite-replay _cleanup version
 #_cleanup()
 #{
 #	cd /
+#	_run_end_hooks
 #	$KILLALL_PROG -KILL -q $FSSTRESS_PROG &> /dev/null
-#	if [ $status -eq 0 ]; then
-#		_log_writes_cleanup &> /dev/null
-#		_dmthin_cleanup
-#	else
-#		echo dm-thinvol-dev: $DMTHIN_VOL_DEV >> $seqres.full
-#	fi
+#	_log_writes_cleanup &> /dev/null
+#	_dmthin_cleanup
 #	rm -f $tmp.*
 #}
+
+# tools/dm-logwrite-replay _cleanup version
+_cleanup()
+{
+	cd /
+	_run_end_hooks
+	$KILLALL_PROG -KILL -q $FSSTRESS_PROG &> /dev/null
+	if [ $status -eq 0 ]; then
+		_log_writes_cleanup &> /dev/null
+		_dmthin_cleanup
+	else
+		echo dm-thinvol-dev: $DMTHIN_VOL_DEV >> $seqres.full
+	fi
+	rm -f $tmp.*
+}
 
 # Import common functions.
 . ./common/filter
