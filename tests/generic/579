@@ -21,6 +21,7 @@ _cleanup()
 	wait
 
 	_restore_fsverity_signatures
+	_run_end_hooks
 	rm -f $tmp.*
 }
 

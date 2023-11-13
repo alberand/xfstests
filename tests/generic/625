@@ -46,6 +46,8 @@ for (( i = 0; i < sig_size; i += 13 )); do
 done > $tmp.sig2
 cmp $tmp.sig $tmp.sig2
 
+_run_end_hooks
+
 # success, all done
 status=0
 exit

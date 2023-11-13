@@ -14,6 +14,7 @@ _begin_fstest auto quick verity encrypt
 _cleanup()
 {
 	cd /
+	_run_end_hooks
 	_restore_fsverity_signatures
 	rm -f $tmp.*
 }
