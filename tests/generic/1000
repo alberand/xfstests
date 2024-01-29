@@ -1,0 +1,87 @@
+#! /bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright 2018 Google LLC
+#
+# FS QA Test generic/1000
+#
+# Test corrupting verity files with limited memory. This test corrupts various
+# parts of the contents of a verity file, or parts of its Merkle tree, by
+# writing directly to the block device.  It verifies that this causes I/O errors
+# when the relevant part of the contents is later read by any means.
+#
+. ./common/preamble
+_begin_fstest auto quick verity
+
+# Override the default cleanup function.
+_cleanup()
+{
+	cd /
+	_restore_fsverity_signatures
+	rm -f $tmp.*
+}
+
+# Import common functions.
+. ./common/filter
+. ./common/verity
+
+# real QA test starts here
+_supported_fs generic
+_require_scratch_verity
+_disable_fsverity_signatures
+_require_fsverity_corruption
+
+_scratch_mkfs_verity &>> $seqres.full
+_scratch_mount
+fsv_orig_file=$SCRATCH_MNT/file
+fsv_file=$SCRATCH_MNT/file.fsv
+
+setup_zeroed_file()
+{
+	local block_size=$1
+	local file_len=$2
+
+	head -c $file_len /dev/zero > $fsv_orig_file
+	cp $fsv_orig_file $fsv_file
+	_fsv_enable $fsv_file --block-size=$block_size
+	cmp $fsv_orig_file $fsv_file
+}
+
+corruption_test()
+{
+	local block_size=$1
+	local file_len=$2
+	local zap_offset=$3
+	local zap_len=$4
+
+	local paramstr="block_size=$block_size"
+	paramstr+=", file_len=$file_len"
+	paramstr+=", zap_offset=$zap_offset"
+	paramstr+=", zap_len=$zap_len"
+
+	local fs_block_size=$(_get_block_size $SCRATCH_MNT)
+
+	rm -rf "${SCRATCH_MNT:?}"/*
+	setup_zeroed_file $block_size $file_len
+
+	# Corrupt part of the file
+	head -c $zap_len /dev/zero | tr '\0' X \
+		| _fsv_scratch_corrupt_bytes $fsv_file $zap_offset
+
+	# Reading the full file with buffered I/O should fail.
+	_scratch_cycle_mount
+	if cat $fsv_file >/dev/null 2>$tmp.err; then
+		echo "Unexpectedly was able to read full file ($paramstr)"
+	elif ! grep -q 'Input/output error' $tmp.err; then
+		echo "Wrong error reading full file ($paramstr):"
+		cat $tmp.err
+	fi
+}
+
+# Always test FSV_BLOCK_SIZE.  Also test some other block sizes if they happen
+# to be supported.
+_fsv_scratch_begin_subtest "Testing block_size=FSV_BLOCK_SIZE"
+corruption_test $FSV_BLOCK_SIZE 524288 0 5
+
+# success, all done
+status=0
+exit
