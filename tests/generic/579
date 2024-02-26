@@ -15,6 +15,7 @@ _begin_fstest auto stress verity
 # Override the default cleanup function.
 _cleanup()
 {
+	_run_end_hooks
 	# Stop all subprocesses.
 	$KILLALL_PROG -q $FSSTRESS_PROG
 	touch $tmp.done
