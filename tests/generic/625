@@ -13,6 +13,13 @@
 . ./common/preamble
 _begin_fstest auto quick verity
 
+_cleanup()
+{
+	cd /
+	_run_end_hooks
+	rm -f $tmp.*
+}
+
 . ./common/filter
 . ./common/verity
 
