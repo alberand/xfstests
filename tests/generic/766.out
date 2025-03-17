@@ -1,0 +1,37 @@
+QA output created by 766
+Error codes
+Can not get fsxattr on ./foo: Invalid argument
+Can not get fsxattr on ./foo: Invalid argument
+Can not get fsxattr on ./foo: Argument list too long
+Can not get fsxattr on ./foo: Invalid argument
+Can not get fsxattr on ./foo: Argument list too long
+Can not get fsxattr on ./foo: Invalid argument
+Can not set fsxattr on ./foo: Invalid argument
+Initial attributes state
+----------------X /mnt/scratch/prj 
+----------------X ./fifo 
+----------------X ./chardev 
+----------------X ./blockdev 
+----------------X ./socket 
+----------------X ./foo 
+----------------X ./symlink 
+Set FS_XFLAG_NODUMP (d)
+Read attributes
+------d---------X /mnt/scratch/prj 
+------d---------X ./fifo 
+------d---------X ./chardev 
+------d---------X ./blockdev 
+------d---------X ./socket 
+------d---------X ./foo 
+------d---------X ./symlink 
+Set attribute on broken link with AT_SYMLINK_NOFOLLOW
+Can not get fsxattr on ./broken-symlink: No such file or directory
+Can not get fsxattr on ./broken-symlink: No such file or directory
+------d---------- ./broken-symlink 
+Initial state of foo2
+----------------X ./foo2 
+Set attribute relative to AT_FDCWD
+------d---------X ./foo2 
+Set attribute on AT_FDCWD
+----------------X ./bar 
+------d---------X . 
