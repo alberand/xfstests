@@ -436,7 +436,7 @@ _fsv_scratch_corrupt_merkle_tree()
 _require_fsverity_max_file_size_limit()
 {
 	case $FSTYP in
-	btrfs|ext4|f2fs)
+	btrfs|ext4|f2fs|xfs)
 		;;
 	*)
 		_notrun "$FSTYP does not store verity data past EOF; no special file size limit"
